@@ -34,6 +34,7 @@ type YouTubePlayerInstance = {
   playVideoAt: (index: number) => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   setVolume: (volume: number) => void;
+  setShuffle: (shufflePlaylist: boolean) => void;
 };
 
 type YouTubePlayerConstructor = new (
@@ -71,8 +72,11 @@ export default function Home() {
   const [duration, setDuration] = useState(0);
   const [currentVideoTitle, setCurrentVideoTitle] =
     useState("BLUETOOTH ERA MIX");
+  const [videoDurations, setVideoDurations] = useState<Record<string, number>>({});
+  const [isShuffle, setIsShuffle] = useState(false);
   const [playlistDrawerOpen, setPlaylistDrawerOpen] = useState(false);
   const [playlistSearch, setPlaylistSearch] = useState("");
+  const [shareToast, setShareToast] = useState(false);
   const [volume, setVolume] = useState(72);
   const [currentVideoAuthor, setCurrentVideoAuthor] = useState<string | null>(
     null,
@@ -96,10 +100,11 @@ export default function Home() {
           index === playerTrack && currentVideoAuthor
             ? currentVideoAuthor
             : "Honey Singh Classics",
-        thumbnail: `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+        duration: videoDurations[id] || 0,
+        thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
         active: index === playerTrack,
       })),
-    [playlistVideoIds, playerTrack, currentVideoTitle, currentVideoAuthor, videoTitles],
+    [playlistVideoIds, playerTrack, currentVideoTitle, currentVideoAuthor, videoTitles, videoDurations],
   );
 
   useEffect(() => {
@@ -138,8 +143,21 @@ export default function Home() {
   }, [playlistItems, playlistSearch]);
 
   const currentThumbnail = playlistVideoIds[playerTrack]
-    ? `https://i.ytimg.com/vi/${playlistVideoIds[playerTrack]}/mqdefault.jpg`
+    ? `https://i.ytimg.com/vi/${playlistVideoIds[playerTrack]}/hqdefault.jpg`
     : undefined;
+
+  const handleShare = useCallback(async () => {
+    const videoId = playlistVideoIds[playerTrack];
+    if (!videoId) return;
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+    }
+  }, [playlistVideoIds, playerTrack]);
 
   const startBluetoothPulse = useCallback(() => {
     if (bluetoothStep !== "idle") return;
@@ -224,7 +242,16 @@ export default function Home() {
               setCurrentVideoTitle(
                 player.getVideoData().title || "BLUETOOTH ERA MIX",
               );
-              setDuration(player.getDuration() || 0);
+              
+              const currentDur = player.getDuration() || 0;
+              setDuration(currentDur);
+              if (currentDur > 0) {
+                const id = player.getVideoData().video_id;
+                if (id) {
+                  setVideoDurations((prev) => prev[id] === currentDur ? prev : { ...prev, [id]: currentDur });
+                }
+              }
+              
               setPlaylistCount(player.getPlaylist()?.length ?? 0);
               setPlayerTrack(player.getPlaylistIndex() ?? 0);
             }
@@ -293,9 +320,14 @@ export default function Home() {
 
   const switchTrack = (direction: "prev" | "next") => {
     const count = playlistCount || 8;
-    const next = direction === "next" ? playerTrack + 1 : playerTrack - 1;
-    const wrapped = (next + count) % count;
-    loadPlaylistTrack(wrapped);
+    if (isShuffle && direction === "next") {
+      const randomIndex = Math.floor(Math.random() * count);
+      loadPlaylistTrack(randomIndex);
+    } else {
+      const next = direction === "next" ? playerTrack + 1 : playerTrack - 1;
+      const wrapped = (next + count) % count;
+      loadPlaylistTrack(wrapped);
+    }
   };
 
   const togglePlayback = () => {
@@ -316,6 +348,13 @@ export default function Home() {
     if (!player) return;
     player.setVolume(volume);
   }, [volume]);
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (player && player.setShuffle) {
+      player.setShuffle(isShuffle);
+    }
+  }, [isShuffle]);
 
   const seekOnBar = (event: MouseEvent<HTMLDivElement>) => {
     if (!duration) return;
@@ -385,11 +424,12 @@ export default function Home() {
             className="flex flex-col items-center text-center z-20"
             style={{ y: heroY, opacity: heroOpacity, scale: heroScale }}
           >
-            <h1 className="text-4xl sm:text-6xl lg:text-[5.5rem] leading-[1] font-bold tracking-tight text-[#ffeedd] mb-4 drop-shadow-2xl">
+            <h1 className="text-[clamp(2.8rem,8vw,5.5rem)] leading-[1] font-bold tracking-tight text-[#ffeedd] mb-4 drop-shadow-2xl">
               DESI KALAKAAR<br />MEMORIES
             </h1>
-            <p className="text-sm sm:text-base text-[#ffeedd]/70 max-w-md leading-relaxed font-medium tracking-wide">
-              Bluetooth era supremacy. 320kbps MP3s.
+            <p className="text-[#ffeedd]/80 text-xl md:text-3xl max-w-2xl font-light tracking-wide mb-12">
+              The songs we passed around.<br />
+              The era we never forgot.
             </p>
             
             {/* Bluetooth Interaction */}
@@ -398,10 +438,10 @@ export default function Home() {
               onClick={startBluetoothPulse}
               className="mt-10 px-6 py-2.5 rounded-full border border-[#ffeedd]/20 bg-[#2d1b13]/50 backdrop-blur-md text-xs tracking-[0.2em] font-medium text-[#ffeedd]/70 hover:text-[#ffeedd] hover:bg-[#2d1b13]/80 transition-all shadow-xl pointer-events-auto"
             >
-              {bluetoothStep === "idle" && "BHAAI, SONG BHEJ →"}
-              {bluetoothStep === "pairing" && "SEARCHING FOR DEVICE..."}
-              {bluetoothStep === "found" && "SENDING VIA BLUETOOTH..."}
-              {bluetoothStep === "done" && "FILE RECEIVED ✓"}
+              {bluetoothStep === "idle" && "BHAAI, GAANA BHEJ →"}
+              {bluetoothStep === "pairing" && "DEVICE DHOONDH RAHA HAI..."}
+              {bluetoothStep === "found" && "GAANA BHEJ RAHA HAI..."}
+              {bluetoothStep === "done" && "GAANA MIL GAYA ✓"}
             </button>
           </motion.div>
         </div>
@@ -422,11 +462,12 @@ export default function Home() {
         >
           <div className="max-w-xl">
             <h2 className="text-[#ffeedd]/50 text-sm md:text-base font-bold tracking-[0.4em] mb-4">"2011"</h2>
-            <h3 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
+            <h3 className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
               BLUETOOTH<br/>ERA
             </h3>
             <p className="text-[#ffeedd]/70 text-lg md:text-2xl font-medium tracking-wide">
-              "Bhai song bhej."
+              "Bhai song bhej."<br />
+              "Bluetooth on kar."
             </p>
           </div>
         </motion.div>
@@ -441,11 +482,13 @@ export default function Home() {
         >
           <div className="max-w-xl">
             <h2 className="text-[#ffeedd]/50 text-sm md:text-base font-bold tracking-[0.4em] mb-4">"2012"</h2>
-            <h3 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
+            <h3 className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
               320 KBPS
             </h3>
             <p className="text-[#ffeedd]/70 text-lg md:text-2xl font-medium tracking-wide">
-              One song.<br/>One phone.<br/>Everyone wanted it.
+              Ek phone.<br />
+              Ek gaana.<br />
+              Puri gang ready.
             </p>
           </div>
         </motion.div>
@@ -460,11 +503,13 @@ export default function Home() {
         >
           <div className="max-w-xl">
             <h2 className="text-[#ffeedd]/50 text-sm md:text-base font-bold tracking-[0.4em] mb-4">"2013"</h2>
-            <h3 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
-              LATE NIGHT<br/>DRIVE
+            <h3 className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
+              LATE NIGHT<br/>DRIVES
             </h3>
             <p className="text-[#ffeedd]/70 text-lg md:text-2xl font-medium tracking-wide">
-              Windows down.<br/>Playlist loud.
+              Windows down.<br/>
+              Bass full.<br/>
+              Gaana repeat pe.
             </p>
           </div>
         </motion.div>
@@ -482,14 +527,14 @@ export default function Home() {
               "2014"
             </h2>
 
-            <h3 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
+            <h3 className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
               DESI<br />KALAKAAR
             </h3>
 
             <p className="text-[#ffeedd]/70 text-lg md:text-2xl font-medium tracking-wide">
-              Swag on point.<br />
-              Bass in the speakers.<br />
-              Desi hip-hop had a moment.
+              Desi sound.<br />
+              Global attitude.<br />
+              Ek poora era.
             </p>
           </div>
         </motion.div>
@@ -507,14 +552,14 @@ export default function Home() {
               "2015"
             </h2>
 
-            <h3 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
+            <h3 className="text-[clamp(2.5rem,6vw,4.5rem)] font-bold mb-6 text-[#ffeedd] tracking-tight drop-shadow-lg">
               ONE MORE<br />SONG
             </h3>
 
             <p className="text-[#ffeedd]/70 text-lg md:text-2xl font-medium tracking-wide">
-              Dheere dheere.<br />
-              One bottle down.<br />
-              Bas ek aur gaana.
+              Gaana khatam?<br />
+              Nahi bhai.<br />
+              Ek aur chala.
             </p>
           </div>
         </motion.div>
@@ -530,21 +575,29 @@ export default function Home() {
       {/* Fixed UI Layer for Player & Drawers */}
       <div className="fixed inset-0 w-full h-full pointer-events-none z-50">
 
+        {/* Modal Backdrop for clicking outside */}
+        {playlistDrawerOpen && (
+          <div 
+            className="absolute inset-0 z-[55] pointer-events-auto"
+            onClick={() => setPlaylistDrawerOpen(false)} 
+          />
+        )}
+
         {/* Playlist Modal Overlay (Positioned above the player) */}
         <div 
           className={`absolute bottom-[100px] left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[720px] z-[60] transition-all duration-300 ease-out origin-bottom ${playlistDrawerOpen ? "opacity-100 scale-100 pointer-events-auto translate-y-0" : "opacity-0 scale-95 translate-y-4 pointer-events-none"}`}
         >
           {/* Modal Panel Container */}
-          <div className="w-full max-h-[60svh] bg-gradient-to-br from-[#40271c]/40 to-[#2a1a11]/60 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-[24px] overflow-hidden flex flex-col pointer-events-auto">
+          <div className="w-full max-h-[60svh] bg-gradient-to-br from-[#40271c]/40 to-[#2a1a11]/60 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-[24px] overflow-hidden flex flex-col">
             
             {/* Modal Header */}
             <div className="px-6 py-5 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-lg font-bold text-white">Yo Yo Honey Singh — 2014 Hits</h3>
-                <p className="text-xs text-white/50 mt-0.5">{playlistCount} Hindi tracks in queue</p>
+                <h3 className="text-lg font-bold text-white">THE DESI KALAKAAR PLAYLIST</h3>
+                <p className="text-xs text-white/50 mt-0.5">{playlistCount} tracks from the golden era</p>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-[10px] uppercase tracking-wider text-white/40 hidden sm:inline-block">YouTube Music ↗</span>
+                <span className="text-[10px] uppercase tracking-wider text-white/40 hidden sm:inline-block">PLAYING FROM YOUTUBE ↗</span>
                 <button 
                   type="button" 
                   onClick={closePlaylist}
@@ -583,10 +636,12 @@ export default function Home() {
                         <div className="min-w-0 flex-1 text-left flex justify-between items-center pr-2">
                           <div className="flex flex-col truncate pr-4">
                             <p className={`text-sm font-semibold truncate ${isActive ? "text-white" : "text-white/80"}`}>{item.title}</p>
-                            <p className="text-[11px] text-white/40 mt-0.5 truncate">{item.artist || "Yo Yo Honey Singh"}</p>
+                            <p className="text-[11px] text-white/40 mt-0.5 truncate">{item.artist || "DESI KALAKAAR ERA"}</p>
                           </div>
-                          {/* We don't have individual duration, so we hardcode a placeholder or omit it. The screenshot has duration. */}
-                          <span className="text-xs text-white/30 shrink-0">--:--</span>
+                          {/* Show actual duration once fetched */}
+                          <span className="text-xs text-white/30 shrink-0">
+                            {item.duration > 0 ? formatTime(item.duration) : "--:--"}
+                          </span>
                         </div>
                       </button>
                     );
@@ -614,8 +669,18 @@ export default function Home() {
               {/* Middle: Track Info & Progress */}
               <div className="flex-1 min-w-0 mx-4 flex flex-col justify-center">
                 <div className="flex flex-col truncate">
-                  <h3 className="text-sm sm:text-[15px] font-bold text-white truncate">{currentVideoTitle || "Loading..."}</h3>
-                  <p className="text-[11px] sm:text-xs text-white/60 truncate mt-0.5">{currentVideoAuthor || "Honey Singh Classics"}</p>
+                  {currentVideoTitle === "Loading..." ? (
+                    <div className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-white/50 text-sm">Loading track...</span>
+                    </div>
+                  ) : (
+                    <h3 className="text-sm sm:text-[15px] font-bold text-white truncate">{currentVideoTitle}</h3>
+                  )}
+                  <p className="text-[11px] sm:text-xs text-white/60 truncate mt-0.5">{currentVideoAuthor || "DESI KALAKAAR ERA"}</p>
                 </div>
                 
                 {/* Progress Bar under text */}
@@ -646,6 +711,15 @@ export default function Home() {
                 </button>
                 <button type="button" onClick={() => switchTrack("next")} className="text-white/50 hover:text-white transition-colors p-2">
                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+                
+                {/* Shuffle Toggle */}
+                <button 
+                  type="button" 
+                  onClick={() => setIsShuffle(!isShuffle)} 
+                  className={`p-2 hidden sm:block transition-colors ${isShuffle ? "text-white" : "text-white/50 hover:text-white"}`}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                 </button>
                 
                 {/* Playlist Toggle */}
