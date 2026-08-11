@@ -741,9 +741,27 @@ export default function Home() {
                 <button 
                   type="button" 
                   onClick={() => setIsShuffle(!isShuffle)} 
-                  className={`p-2 hidden sm:block transition-colors ${isShuffle ? "text-white" : "text-white/50 hover:text-white"}`}
+                  className={`p-2 transition-colors ${isShuffle ? "text-white" : "text-white/50 hover:text-white"}`}
+                  title="Shuffle"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                </button>
+
+                {/* Share Button */}
+                <button 
+                  type="button" 
+                  onClick={handleShare} 
+                  className="p-2 transition-colors text-white/50 hover:text-white relative group"
+                  title="Share"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                  
+                  {/* Tooltip */}
+                  {shareToast && (
+                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap pointer-events-none">
+                      LINK COPIED!
+                    </span>
+                  )}
                 </button>
                 
                 {/* Playlist Toggle */}

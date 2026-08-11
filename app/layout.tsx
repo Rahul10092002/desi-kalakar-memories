@@ -13,9 +13,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Bluetooth Era",
+  title: "DESI KALAKAAR MEMORIES",
   description:
-    "A nostalgic music memory experience inspired by early 2010s India, Bluetooth transfers, MP3 nights, and neon-lit college rides.",
+    "The songs we passed around. The era we never forgot. Yo Yo Honey Singh Bluetooth nostalgia.",
+  openGraph: {
+    title: "DESI KALAKAAR MEMORIES",
+    description: "The songs we passed around. The era we never forgot. Yo Yo Honey Singh Bluetooth nostalgia.",
+    url: "https://desi-kalakar-memories.vercel.app/",
+    siteName: "DESI KALAKAAR MEMORIES",
+    images: [
+      {
+        url: "https://desi-kalakar-memories.vercel.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Desi Kalakaar Memories Preview",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DESI KALAKAAR MEMORIES",
+    description: "The songs we passed around. The era we never forgot. Yo Yo Honey Singh Bluetooth nostalgia.",
+    images: ["https://desi-kalakar-memories.vercel.app/og-image.png"],
+  },
 };
 
 export default function RootLayout({
