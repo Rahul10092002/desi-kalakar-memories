@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, MouseEvent } from "react";
 import { fetchVideoTitles } from "./actions";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { X, Search, Play, Loader2, SkipBack, Pause, SkipForward, Shuffle, Share, ListMusic } from "lucide-react";
 
 type YouTubePlayerOptions = {
   height: string;
@@ -611,7 +612,7 @@ export default function Home() {
                   onClick={closePlaylist}
                   className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/60 transition-colors"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -619,9 +620,7 @@ export default function Home() {
             {/* Search Bar */}
             <div className="px-6 pb-4 shrink-0">
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <input
                   type="text"
                   placeholder="Search tracks..."
@@ -650,7 +649,7 @@ export default function Home() {
                         {/* Number or Play Icon */}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isActive ? "bg-transparent text-white" : "bg-white/5 text-white/40 font-medium text-xs"}`}>
                           {isActive ? (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <Play size={14} fill="currentColor" />
                           ) : (
                             idx + 1
                           )}
@@ -695,10 +694,7 @@ export default function Home() {
                 <div className="flex flex-col truncate">
                   {currentVideoTitle === "Loading..." ? (
                     <div className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-white/50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <Loader2 className="animate-spin h-4 w-4 text-white/50" />
                       <span className="text-white/50 text-sm">Loading track...</span>
                     </div>
                   ) : (
@@ -724,17 +720,17 @@ export default function Home() {
               {/* Right: Controls */}
               <div className="flex items-center shrink-0 gap-1 sm:gap-3 mr-2 sm:mr-4">
                 <button type="button" onClick={() => switchTrack("prev")} className="text-white/50 hover:text-white transition-colors p-2">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                  <SkipBack size={20} />
                 </button>
                 <button type="button" onClick={togglePlayback} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-transform shadow-lg mx-1">
                   {isPlaying ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    <Pause size={18} fill="currentColor" strokeWidth={0} />
                   ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <Play size={18} fill="currentColor" strokeWidth={0} className="ml-1" />
                   )}
                 </button>
                 <button type="button" onClick={() => switchTrack("next")} className="text-white/50 hover:text-white transition-colors p-2">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                   <SkipForward size={20} />
                 </button>
                 
                 {/* Shuffle Toggle */}
@@ -744,7 +740,7 @@ export default function Home() {
                   className={`p-2 transition-colors ${isShuffle ? "text-white" : "text-white/50 hover:text-white"}`}
                   title="Shuffle"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                  <Shuffle size={18} />
                 </button>
 
                 {/* Share Button */}
@@ -754,7 +750,7 @@ export default function Home() {
                   className="p-2 transition-colors text-white/50 hover:text-white relative group"
                   title="Share"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                  <Share size={18} />
                   
                   {/* Tooltip */}
                   {shareToast && (
@@ -770,7 +766,7 @@ export default function Home() {
                   onClick={() => setPlaylistDrawerOpen(!playlistDrawerOpen)} 
                   className={`p-2 ml-1 transition-colors ${playlistDrawerOpen ? "text-white" : "text-white/50 hover:text-white"}`}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  <ListMusic size={20} />
                 </button>
               </div>
 
