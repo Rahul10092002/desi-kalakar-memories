@@ -173,6 +173,14 @@ export default function Home() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // Do not intercept if the user is typing in an input
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
       if (event.key.toLowerCase() === "b") {
         event.preventDefault();
         startBluetoothPulse();
